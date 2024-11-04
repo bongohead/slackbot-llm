@@ -8,6 +8,12 @@ const crypto = require('crypto');
 const app = express();
 const slackClient = new WebClient(process.env.SLACK_BOT_TOKEN);
 
+// Middleware to capture raw body for Slack signature verification
+app.use('/slack/commands', bodyParser.urlencoded({ extended: true, verify: (req, res, buf) => {
+    req.rawBody = buf.toString('utf8');  // Capture raw body as string
+}}));
+
+// Use JSON body parser for other routes
 app.use(bodyParser.json());
 
 const PORT = process.env.PORT || 3002;
@@ -19,12 +25,14 @@ function verifySlackRequest(req) {
     const slackTimestamp = req.headers['x-slack-request-timestamp'];
     const time = Math.floor(Date.now() / 1000);
 
+    // Check if the request is too old
     if (Math.abs(time - slackTimestamp) > 300) {
         console.warn('Request timestamp is too old.');
         return false;
     }
 
-    const sigBasestring = `v0:${slackTimestamp}:${JSON.stringify(req.body)}`;
+    // Use raw body for slash commands; fallback to JSON.stringify for other routes
+    const sigBasestring = `v0:${slackTimestamp}:${req.rawBody || JSON.stringify(req.body)}`;
     const hmac = crypto.createHmac('sha256', process.env.SLACK_SIGNING_SECRET);
     hmac.update(sigBasestring);
     const mySignature = `v0=${hmac.digest('hex')}`;
@@ -157,8 +165,14 @@ app.post('/slack/commands', async (req, res) => {
     const prompt = `${user_name} asks: ${text}`;
 
     try {
+        // Display the command itself using the response URL
+        await axios.post(response_url, {
+            text: `/${req.body.command} ${text}`,
+            response_type: 'in_channel'  // 'in_channel' shows it to all users; 'ephemeral' shows it only to the user
+        });
+        
         // Generate response from OpenAI
-        const responseText = 'Hi'// await getOpenAIResponse(prompt, user_name);
+        const responseText = await getOpenAIResponse(prompt, user_name);
 
         // Send response back to Slack using response_url
         await axios.post(response_url, {
