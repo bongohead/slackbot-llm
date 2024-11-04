@@ -1,0 +1,49 @@
+# Node.js dependencies
+node_modules/
+npm-debug.log
+yarn-error.log
+package-lock.json
+yarn.lock
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Runtime data
+pids/
+*.pid
+*.seed
+*.pid.lock
+
+# Environment variables
+.env
+
+# OS-specific files
+.DS_Store
+Thumbs.db
+
+# IDE/editor directories and files
+.vscode/
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+
+# Output directories
+dist/
+build/
+coverage/
+
+# Optional: Ignore pm2 process files if using pm2 to manage the process
+.pm2/
+
+# Optional: Ignore temporary files (e.g., editor backups)
+*.swp
+*~
+
+# Optional: Ignore any test output
+/test-output/
